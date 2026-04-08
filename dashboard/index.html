@@ -242,25 +242,7 @@ td.oc{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ove
 let R=[],fil=[],sk='score',sortAsc=false,cp=1,tab='all';
 const FM={'Tax lien':'d0','Lis pendens':'d1','Pre-foreclosure':'d2','Judgment lien':'d3','Mechanic lien':'d4','Probate / estate':'d5','LLC / corp owner':'d6','New this week':'d7'};
 
-// Try paths to find records.json (handles GitHub Pages subpath)
-const paths=['records.json','./records.json'];
-function tryFetch(i){
-  if(i>=paths.length){document.getElementById('loading').innerHTML='<span style="color:#ef4444">Could not load records.json. Make sure the scraper workflow has run.</span>';return;}
-  fetch(paths[i])
-    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
-    .then(data=>{
-      R=data.records||[];
-      document.getElementById('loading').style.display='none';
-      document.getElementById('lt').style.display='';
-      const cc={};
-      R.forEach(r=>{cc[r.cat_code]=(cc[r.cat_code]||0)+1});
-      Object.entries(cc).forEach(([k,v])=>{const e=document.getElementById('c-'+k);if(e)e.textContent=v.toLocaleString()});
-      document.getElementById('h-score').classList.add('sd');
-      af();
-    })
-    .catch(()=>tryFetch(i+1));
-}
-tryFetch(0);
+// data loaded via fetch below
 
 function af(){
   const q=document.getElementById('searchBox').value.toLowerCase();
@@ -368,6 +350,27 @@ function ec(){
 ')],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='mecklenburg_leads.csv';a.click();
 }
+</script>
+<script>
+// Build absolute URL to records.json relative to this page
+const base = window.location.href.replace(/\/[^\/]*$/, '/').replace(/\/$/, '');
+const jsonUrl = base + '/records.json';
+fetch(jsonUrl)
+  .then(r => { if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(data => {
+    R = data.records || [];
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('lt').style.display = '';
+    const cc = {};
+    R.forEach(r => { cc[r.cat_code] = (cc[r.cat_code]||0)+1; });
+    Object.entries(cc).forEach(([k,v]) => { const e=document.getElementById('c-'+k); if(e) e.textContent=v.toLocaleString(); });
+    document.getElementById('h-score').classList.add('sd');
+    af();
+  })
+  .catch(e => {
+    document.getElementById('loading').innerHTML =
+      '<span style="color:#ef4444">Error: ' + e.message + '<br>URL tried: ' + jsonUrl + '</span>';
+  });
 </script>
 </body>
 </html>
