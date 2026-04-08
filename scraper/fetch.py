@@ -144,12 +144,90 @@ def _get(url: str, *, stream: bool = False, timeout: int = 30) -> requests.Respo
 # ---------------------------------------------------------------------------
 
 def download_pdf(url: str) -> bytes:
-    """Download a PDF and return its raw bytes."""
-    log.info("Downloading Tax Delinquent PDF …")
-    resp = _get(url, stream=True, timeout=60)
-    content = resp.content
-    log.info("Downloaded %d bytes", len(content))
-    return content
+    """
+    Download a PDF and return its raw bytes.
+
+    Widen.net share links serve an HTML viewer page, not the raw PDF.
+    We follow the chain:
+      1. GET the share URL — if it returns a PDF directly, done.
+      2. If it returns HTML, search for the direct PDF download URL
+         embedded in the page (Widen embeds it in JS config or data attrs).
+      3. Fall back to appending /download to the share URL.
+    """
+    log.info("Downloading Tax Delinquent PDF from %s ...", url)
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+        ),
+        "Accept": "application/pdf,text/html,*/*",
+    }
+
+    last_exc = None
+    for attempt in range(1, RETRY_ATTEMPTS + 1):
+        try:
+            resp = requests.get(url, headers=headers, timeout=60,
+                                allow_redirects=True)
+            resp.raise_for_status()
+            content_type = resp.headers.get("content-type", "")
+
+            # Direct PDF
+            if "pdf" in content_type or resp.content[:4] == b"%PDF":
+                log.info("Got direct PDF (%d bytes)", len(resp.content))
+                return resp.content
+
+            # HTML viewer — extract real PDF URL
+            log.info("Got HTML viewer page, extracting PDF URL ...")
+            html = resp.text
+
+            patterns = [
+                r'"downloadUrl"\s*:\s*"([^"]+\.pdf[^"]*)"',
+                r'"url"\s*:\s*"([^"]+\.pdf[^"]*)"',
+                r'data-url="([^"]+\.pdf[^"]*)"',
+                r'href="([^"]+\.pdf[^"]*)"',
+                r'"contentUrl"\s*:\s*"([^"]+)"',
+                r'src="([^"]+\.pdf[^"]*)"',
+            ]
+            pdf_url = None
+            for pat in patterns:
+                m = re.search(pat, html, re.IGNORECASE)
+                if m:
+                    pdf_url = m.group(1)
+                    pdf_url = pdf_url.replace("\\u002F", "/").replace("\\/", "/")
+                    log.info("Found PDF URL: %s", pdf_url)
+                    break
+
+            # Fall back to /download suffix
+            if not pdf_url:
+                pdf_url = url.rstrip("/") + "/download"
+                log.info("Falling back to: %s", pdf_url)
+
+            pdf_resp = requests.get(pdf_url, headers=headers,
+                                    timeout=60, allow_redirects=True)
+            pdf_resp.raise_for_status()
+
+            if pdf_resp.content[:4] == b"%PDF" or \
+               "pdf" in pdf_resp.headers.get("content-type", ""):
+                log.info("Downloaded PDF (%d bytes)", len(pdf_resp.content))
+                return pdf_resp.content
+
+            raise RuntimeError(
+                f"Response from {pdf_url} does not appear to be a PDF "
+                f"(content-type: {pdf_resp.headers.get('content-type')})"
+            )
+
+        except Exception as exc:
+            last_exc = exc
+            log.warning("PDF download attempt %d/%d failed: %s",
+                        attempt, RETRY_ATTEMPTS, exc)
+            if attempt < RETRY_ATTEMPTS:
+                time.sleep(RETRY_DELAY * attempt)
+
+    raise RuntimeError(
+        f"Failed to download PDF after {RETRY_ATTEMPTS} attempts"
+    ) from last_exc
+
 
 
 # ---------------------------------------------------------------------------
