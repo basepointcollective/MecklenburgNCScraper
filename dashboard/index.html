@@ -242,7 +242,27 @@ td.oc{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ove
 let R=[],fil=[],sk='score',sortAsc=false,cp=1,tab='all';
 const FM={'Tax lien':'d0','Lis pendens':'d1','Pre-foreclosure':'d2','Judgment lien':'d3','Mechanic lien':'d4','Probate / estate':'d5','LLC / corp owner':'d6','New this week':'d7'};
 
-// data loaded via fetch below
+// Load data from injected script tag (set by records_data.js)
+function initData(){
+  if(window.DASHBOARD_RECORDS&&window.DASHBOARD_RECORDS.records){
+    R=window.DASHBOARD_RECORDS.records||[];
+    document.getElementById('loading').style.display='none';
+    document.getElementById('lt').style.display='';
+    const cc={};
+    R.forEach(r=>{cc[r.cat_code]=(cc[r.cat_code]||0)+1});
+    Object.entries(cc).forEach(([k,v])=>{const e=document.getElementById('c-'+k);if(e)e.textContent=v.toLocaleString()});
+    document.getElementById('h-score').classList.add('sd');
+    af();
+  } else {
+    document.getElementById('loading').innerHTML='<span style="color:#ef4444">Data not loaded. Run the GitHub Actions workflow first, then hard-refresh (Cmd+Shift+R).</span>';
+  }
+}
+// records_data.js is loaded before this script via <script src>
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', initData);
+} else {
+  initData();
+}
 
 function af(){
   const q=document.getElementById('searchBox').value.toLowerCase();
@@ -351,25 +371,6 @@ function ec(){
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='mecklenburg_leads.csv';a.click();
 }
 </script>
-<script>
-// Use location.origin + pathname to build a reliable URL to records.json
-const jsonUrl = location.origin + location.pathname.replace(/\/$/, '') + '/records.json';
-fetch(jsonUrl)
-  .then(r => { if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-  .then(data => {
-    R = data.records || [];
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('lt').style.display = '';
-    const cc = {};
-    R.forEach(r => { cc[r.cat_code] = (cc[r.cat_code]||0)+1; });
-    Object.entries(cc).forEach(([k,v]) => { const e=document.getElementById('c-'+k); if(e) e.textContent=v.toLocaleString(); });
-    document.getElementById('h-score').classList.add('sd');
-    af();
-  })
-  .catch(e => {
-    document.getElementById('loading').innerHTML =
-      '<span style="color:#ef4444">Error: ' + e.message + '<br>URL tried: ' + jsonUrl + '</span>';
-  });
-</script>
+<script src="records_data.js"></script>
 </body>
 </html>
