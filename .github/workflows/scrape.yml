@@ -42,10 +42,14 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add dashboard/records.json data/records.json data/ghl_export.csv
-          git add -f dashboard/index.html
+          git add -f dashboard/index.html dashboard/records.json data/records.json data/ghl_export.csv
           git diff --cached --quiet || git commit -m "chore: auto-update leads $(date -u +%Y-%m-%d)"
           git push
+
+      - name: Upload dashboard as Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dashboard/
 
   deploy-pages:
     needs: scrape
@@ -54,16 +58,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Upload dashboard/ as Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dashboard/
-
       - name: Deploy to GitHub Pages
         id: deploy
         uses: actions/deploy-pages@v4
