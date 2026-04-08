@@ -366,11 +366,24 @@ function ec(){
   const h=['Score','Owner','Property Address','City','State','Zip','Amount Due','Category','Doc Type','Filed','Flags','Phone','Email','Skip Trace','Source','URL'];
   const lines=[h.join(',')];
   fil.forEach(r=>lines.push([r.score,'"'+(r.owner||'').replace(/"/g,'""')+'"','"'+(r.addr||'').replace(/"/g,'""')+'"',(r.city||''),(r.state||''),(r.zip||''),(r.amount||0),'"'+(r.cat||'').replace(/"/g,'""')+'"','"'+(r.doc_type||'').replace(/"/g,'""')+'"',(r.filed||''),'"'+((r.flags||[]).join('|'))+'"',(r.phone||''),(r.email||''),(r.skiptrace||''),(r.source||''),(r.url||'')].join(',')));
-  const b=new Blob([lines.join('
-')],{type:'text/csv'});
+  const b=new Blob([lines.join('\n')],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='mecklenburg_leads.csv';a.click();
 }
 </script>
-<script src="records_data.js"></script>
+<script>
+fetch('https://basepointcollective.github.io/MecklenburgNCScraper/records.json')
+  .then(r=>r.json())
+  .then(data=>{
+    R=data.records||[];
+    document.getElementById('loading').style.display='none';
+    document.getElementById('lt').style.display='';
+    const cc={};
+    R.forEach(r=>{cc[r.cat_code]=(cc[r.cat_code]||0)+1});
+    Object.entries(cc).forEach(([k,v])=>{const e=document.getElementById('c-'+k);if(e)e.textContent=v.toLocaleString()});
+    document.getElementById('h-score').classList.add('sd');
+    af();
+  })
+  .catch(e=>document.getElementById('loading').innerHTML='<span style="color:red">'+e+'</span>');
+</script>
 </body>
 </html>
