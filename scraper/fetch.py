@@ -464,10 +464,51 @@ def _ensure_dirs() -> None:
 
 def write_json(payload: dict[str, Any]) -> None:
     _ensure_dirs()
-    blob = json.dumps(payload, indent=2, default=str)
-    for path in (DASHBOARD_JSON, DATA_JSON):
-        path.write_text(blob, encoding="utf-8")
-        log.info("Wrote %s  (%d records)", path, payload["total"])
+
+    # Full JSON → data/records.json (complete, indented, for exports/integrations)
+    full_blob = json.dumps(payload, indent=2, default=str)
+    DATA_JSON.write_text(full_blob, encoding="utf-8")
+    log.info("Wrote %s  (%d records)", DATA_JSON, payload["total"])
+
+    # Slim JSON → dashboard/records.json (only UI fields, no indentation = ~5x smaller)
+    SLIM_FIELDS = ["score","owner","prop_address","prop_city","prop_state","prop_zip",
+                   "amount","cat_label","cat","flags","filed","doc_type","doc_num",
+                   "mail_address","mail_city","mail_state","mail_zip",
+                   "source","clerk_url","phone","email","skiptrace_status"]
+    # Sort by score desc, cap at 5000 for dashboard (keeps file under 1MB)
+    top_records = sorted(payload.get("records", []),
+                         key=lambda r: r.get("score", 0), reverse=True)[:5000]
+    slim_records = []
+    for r in top_records:
+        slim_records.append({
+            "score":    r.get("score", 0),
+            "owner":    r.get("owner", ""),
+            "addr":     r.get("prop_address", ""),
+            "city":     r.get("prop_city", ""),
+            "state":    r.get("prop_state", ""),
+            "zip":      r.get("prop_zip", ""),
+            "amount":   r.get("amount", 0) or 0,
+            "cat":      r.get("cat_label", ""),
+            "cat_code": r.get("cat", ""),
+            "flags":    r.get("flags", []),
+            "filed":    r.get("filed", ""),
+            "doc_type": r.get("doc_type", ""),
+            "doc_num":  r.get("doc_num", ""),
+            "url":      r.get("clerk_url", ""),
+            "phone":    r.get("phone", ""),
+            "email":    r.get("email", ""),
+            "skiptrace":r.get("skiptrace_status", ""),
+        })
+    slim_payload = {
+        "fetched_at":  payload.get("fetched_at", ""),
+        "total":       payload.get("total", 0),
+        "with_address":payload.get("with_address", 0),
+        "records":     slim_records,
+    }
+    slim_blob = json.dumps(slim_payload, separators=(',', ':'), default=str)
+    DASHBOARD_JSON.write_text(slim_blob, encoding="utf-8")
+    log.info("Wrote %s  (%d records, slim format, %d KB)",
+             DASHBOARD_JSON, payload["total"], len(slim_blob)//1024)
 
 
 def _split_name(full: str) -> tuple[str, str]:
@@ -701,7 +742,7 @@ td.oc{{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ov
     <input type="range" id="sr" min="0" max="100" value="0" oninput="document.getElementById('sv').textContent=this.value;af()"></div>
   </div>
   <div class="sb"><div class="sbl">Amount Due</div>
-    <div class="amt-inputs"><input type="number" id="amn" placeholder="Min $" oninput="af()"><input type="number" id="amx" placeholder="Max $" oninput="af()"></div>
+    <div class="amt-inputs"><input type="number" id="amn" placeholder="Min $" value="2500" oninput="af()"><input type="number" id="amx" placeholder="Max $" oninput="af()"></div>
   </div>
   <div class="sb"><div class="sbl">Skip Trace Status</div><div class="filter-group">
     <label><input type="checkbox" class="skf" value="" checked> All</label>
