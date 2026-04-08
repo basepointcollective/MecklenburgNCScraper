@@ -510,6 +510,12 @@ def write_json(payload: dict[str, Any]) -> None:
     log.info("Wrote %s  (%d records, slim format, %d KB)",
              DASHBOARD_JSON, payload["total"], len(slim_blob)//1024)
 
+    # Also write a JS data file — loaded via <script src> which is 100% reliable
+    js_data = "window.DASHBOARD_RECORDS=" + slim_blob + ";"
+    js_path = DASHBOARD_DIR / "records_data.js"
+    js_path.write_text(js_data, encoding="utf-8")
+    log.info("Wrote %s  (%d KB)", js_path, len(js_data)//1024)
+
 
 def _split_name(full: str) -> tuple[str, str]:
     parts = full.strip().split()
@@ -819,25 +825,27 @@ td.oc{{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ov
 let R=[],fil=[],sk='score',sortAsc=false,cp=1,tab='all';
 const FM={{'Tax lien':'d0','Lis pendens':'d1','Pre-foreclosure':'d2','Judgment lien':'d3','Mechanic lien':'d4','Probate / estate':'d5','LLC / corp owner':'d6','New this week':'d7'}};
 
-// Try paths to find records.json (handles GitHub Pages subpath)
-const paths=['records.json','./records.json'];
-function tryFetch(i){{
-  if(i>=paths.length){{document.getElementById('loading').innerHTML='<span style="color:#ef4444">Could not load records.json. Make sure the scraper workflow has run.</span>';return;}}
-  fetch(paths[i])
-    .then(r=>{{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}})
-    .then(data=>{{
-      R=data.records||[];
-      document.getElementById('loading').style.display='none';
-      document.getElementById('lt').style.display='';
-      const cc={{}};
-      R.forEach(r=>{{cc[r.cat_code]=(cc[r.cat_code]||0)+1}});
-      Object.entries(cc).forEach(([k,v])=>{{const e=document.getElementById('c-'+k);if(e)e.textContent=v.toLocaleString()}});
-      document.getElementById('h-score').classList.add('sd');
-      af();
-    }})
-    .catch(()=>tryFetch(i+1));
+// Load data from injected script tag (set by records_data.js)
+function initData(){{
+  if(window.DASHBOARD_RECORDS&&window.DASHBOARD_RECORDS.records){{
+    R=window.DASHBOARD_RECORDS.records||[];
+    document.getElementById('loading').style.display='none';
+    document.getElementById('lt').style.display='';
+    const cc={{}};
+    R.forEach(r=>{{cc[r.cat_code]=(cc[r.cat_code]||0)+1}});
+    Object.entries(cc).forEach(([k,v])=>{{const e=document.getElementById('c-'+k);if(e)e.textContent=v.toLocaleString()}});
+    document.getElementById('h-score').classList.add('sd');
+    af();
+  }} else {{
+    document.getElementById('loading').innerHTML='<span style="color:#ef4444">Data not loaded. Run the GitHub Actions workflow first, then hard-refresh (Cmd+Shift+R).</span>';
+  }}
 }}
-tryFetch(0);
+// records_data.js is loaded before this script via <script src>
+if(document.readyState==='loading'){{
+  document.addEventListener('DOMContentLoaded', initData);
+}} else {{
+  initData();
+}}
 
 function af(){{
   const q=document.getElementById('searchBox').value.toLowerCase();
@@ -945,6 +953,7 @@ function ec(){{
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='mecklenburg_leads.csv';a.click();
 }}
 </script>
+<script src="records_data.js"></script>
 </body>
 </html>"""
 
