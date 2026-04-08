@@ -564,23 +564,51 @@ def write_ghl_csv(records: list[dict[str, Any]]) -> None:
 # ---------------------------------------------------------------------------
 
 def write_dashboard_html(payload: dict[str, Any]) -> None:
+    import json as _json
     DASHBOARD_DIR.mkdir(parents=True, exist_ok=True)
     html_path = DASHBOARD_DIR / "index.html"
 
-    records  = payload.get("records", [])
-    total    = payload.get("total", 0)
-    fetched  = payload.get("fetched_at", "")
+    records    = payload.get("records", [])
+    total      = payload.get("total", 0)
+    fetched    = payload.get("fetched_at", "")
     high_score = sum(1 for r in records if r.get("score", 0) >= 70)
     avg_score  = round(sum(r.get("score",0) for r in records) / max(len(records),1))
     total_debt = sum((r.get("amount") or 0) for r in records)
 
-    html = _build_dashboard_html(fetched, total, high_score, avg_score, total_debt)
+    # Build slim records sorted by score, capped at 5000
+    top = sorted(records, key=lambda r: r.get("score",0), reverse=True)[:5000]
+    slim = []
+    for r in top:
+        slim.append({
+            "score":    r.get("score", 0),
+            "owner":    r.get("owner", ""),
+            "addr":     r.get("prop_address", ""),
+            "city":     r.get("prop_city", ""),
+            "state":    r.get("prop_state", ""),
+            "zip":      r.get("prop_zip", ""),
+            "amount":   r.get("amount", 0) or 0,
+            "cat":      r.get("cat_label", ""),
+            "cat_code": r.get("cat", ""),
+            "flags":    r.get("flags", []),
+            "filed":    r.get("filed", ""),
+            "doc_type": r.get("doc_type", ""),
+            "doc_num":  r.get("doc_num", ""),
+            "url":      r.get("clerk_url", ""),
+            "phone":    r.get("phone", ""),
+            "email":    r.get("email", ""),
+            "skiptrace":r.get("skiptrace_status", ""),
+        })
+
+    # Embed data directly — no fetch needed, works instantly
+    records_js = _json.dumps(slim, separators=(',',':'), default=str)
+    html = _build_dashboard_html(fetched, total, high_score, avg_score, total_debt, records_js)
     html_path.write_text(html, encoding="utf-8")
-    log.info("Wrote dashboard HTML -> %s", html_path)
+    log.info("Wrote dashboard HTML -> %s  (%d records embedded, %d KB)",
+             html_path, len(slim), len(html)//1024)
 
 
-def _build_dashboard_html(fetched, total, high_score, avg_score, total_debt):
-    """Generate dashboard HTML that loads records.json via fetch() — no inline data."""
+def _build_dashboard_html(fetched, total, high_score, avg_score, total_debt, records_js="[]"):
+    """Generate dashboard HTML with data embedded inline — no fetch needed."""
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -825,27 +853,15 @@ td.oc{{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ov
 let R=[],fil=[],sk='score',sortAsc=false,cp=1,tab='all';
 const FM={{'Tax lien':'d0','Lis pendens':'d1','Pre-foreclosure':'d2','Judgment lien':'d3','Mechanic lien':'d4','Probate / estate':'d5','LLC / corp owner':'d6','New this week':'d7'}};
 
-// Load data from injected script tag (set by records_data.js)
-function initData(){{
-  if(window.DASHBOARD_RECORDS&&window.DASHBOARD_RECORDS.records){{
-    R=window.DASHBOARD_RECORDS.records||[];
-    document.getElementById('loading').style.display='none';
-    document.getElementById('lt').style.display='';
-    const cc={{}};
-    R.forEach(r=>{{cc[r.cat_code]=(cc[r.cat_code]||0)+1}});
-    Object.entries(cc).forEach(([k,v])=>{{const e=document.getElementById('c-'+k);if(e)e.textContent=v.toLocaleString()}});
-    document.getElementById('h-score').classList.add('sd');
-    af();
-  }} else {{
-    document.getElementById('loading').innerHTML='<span style="color:#ef4444">Data not loaded. Run the GitHub Actions workflow first, then hard-refresh (Cmd+Shift+R).</span>';
-  }}
-}}
-// records_data.js is loaded before this script via <script src>
-if(document.readyState==='loading'){{
-  document.addEventListener('DOMContentLoaded', initData);
-}} else {{
-  initData();
-}}
+// Data embedded at scrape time — no fetch needed
+document.getElementById('h-score').classList.add('sd');
+R = {records_js};
+document.getElementById('loading').style.display='none';
+document.getElementById('lt').style.display='';
+const cc={{}};
+R.forEach(r=>{{cc[r.cat_code]=(cc[r.cat_code]||0)+1}});
+Object.entries(cc).forEach(([k,v])=>{{const e=document.getElementById('c-'+k);if(e)e.textContent=v.toLocaleString()}});
+af();
 
 function af(){{
   const q=document.getElementById('searchBox').value.toLowerCase();
@@ -953,7 +969,6 @@ function ec(){{
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='mecklenburg_leads.csv';a.click();
 }}
 </script>
-<script src="records_data.js"></script>
 </body>
 </html>"""
 
