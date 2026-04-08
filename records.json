@@ -1,0 +1,80 @@
+{
+  "fetched_at": "2026-04-08T15:53:32.694500+00:00",
+  "source": "Mecklenburg County \u2014 Tax Delinquent Advertisement PDF",
+  "date_range": "2026-04-08",
+  "total": 0,
+  "with_address": 0,
+  "county": "Mecklenburg County",
+  "state": "NC",
+  "categories": {
+    "TAXDEL": {
+      "label": "Tax Delinquent",
+      "count": 0
+    },
+    "LP": {
+      "label": "Lis Pendens",
+      "count": 0
+    },
+    "NOFC": {
+      "label": "Notice of Foreclosure",
+      "count": 0
+    },
+    "TAXDEED": {
+      "label": "Tax Deed",
+      "count": 0
+    },
+    "JUD": {
+      "label": "Judgment",
+      "count": 0
+    },
+    "CCJ": {
+      "label": "Certified Judgment",
+      "count": 0
+    },
+    "DRJUD": {
+      "label": "Domestic Judgment",
+      "count": 0
+    },
+    "LNCORPTX": {
+      "label": "Corp Tax Lien",
+      "count": 0
+    },
+    "LNIRS": {
+      "label": "IRS Lien",
+      "count": 0
+    },
+    "LNFED": {
+      "label": "Federal Lien",
+      "count": 0
+    },
+    "LN": {
+      "label": "Lien",
+      "count": 0
+    },
+    "LNMECH": {
+      "label": "Mechanic Lien",
+      "count": 0
+    },
+    "LNHOA": {
+      "label": "HOA Lien",
+      "count": 0
+    },
+    "MEDLN": {
+      "label": "Medicaid Lien",
+      "count": 0
+    },
+    "PRO": {
+      "label": "Probate Documents",
+      "count": 0
+    },
+    "NOC": {
+      "label": "Notice of Commencement",
+      "count": 0
+    },
+    "RELLP": {
+      "label": "Release Lis Pendens",
+      "count": 0
+    }
+  },
+  "records": []
+}

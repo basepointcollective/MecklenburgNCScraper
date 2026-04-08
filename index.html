@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mecklenburg County — Motivated Seller Leads</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --border: #2d3148;
+    --accent: #6c63ff;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --font: 'Inter', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  header h1 { font-size: 1.3rem; font-weight: 700; }
+  header .meta { color: var(--muted); font-size: 0.82rem; }
+
+  .stats {
+    display: flex;
+    gap: 16px;
+    padding: 20px 32px;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 24px;
+    min-width: 140px;
+  }
+  .stat-card .val { font-size: 2rem; font-weight: 800; color: var(--accent); }
+  .stat-card .lbl { color: var(--muted); font-size: 0.78rem; margin-top: 4px; }
+
+  .toolbar {
+    padding: 0 32px 16px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  input[type=search] {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    width: 300px;
+    outline: none;
+  }
+  input[type=search]:focus { border-color: var(--accent); }
+  select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    outline: none;
+  }
+  .btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .btn:hover { opacity: .88; }
+
+  .table-wrap {
+    padding: 0 32px 40px;
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    background: var(--surface);
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: .05em;
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { color: var(--text); }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+  tbody tr:hover { background: rgba(108,99,255,.08); }
+  td { padding: 10px 12px; vertical-align: middle; }
+
+  .score-pill {
+    display: inline-block;
+    width: 36px;
+    text-align: center;
+    border-radius: 6px;
+    padding: 3px 0;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .score-high { background: rgba(34,197,94,.18); color: var(--green); }
+  .score-mid  { background: rgba(245,158,11,.18); color: var(--yellow); }
+  .score-low  { background: rgba(239,68,68,.18);  color: var(--red); }
+
+  .badge {
+    display: inline-block;
+    background: rgba(108,99,255,.15);
+    color: #a5b4fc;
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 11px;
+    margin: 2px 2px 2px 0;
+    white-space: nowrap;
+  }
+  .cat-tag {
+    background: rgba(255,255,255,.06);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .flags-cell { max-width: 280px; }
+
+  .no-data { text-align: center; color: var(--muted); padding: 60px 0; }
+
+  @media (max-width: 700px) {
+    .stats, .toolbar, .table-wrap, header { padding-left: 16px; padding-right: 16px; }
+    input[type=search] { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🏠 Mecklenburg County — Motivated Seller Leads</h1>
+    <div class="meta">Source: Tax Delinquent Advertisement PDF &nbsp;|&nbsp; Auto-updated daily via GitHub Actions</div>
+  </div>
+  <div class="meta">Last fetch: 2026-04-08 15:53:32 UTC</div>
+</header>
+
+<div class="stats">
+  <div class="stat-card"><div class="val">0</div><div class="lbl">Total Leads</div></div>
+  <div class="stat-card"><div class="val">0</div><div class="lbl">With Address</div></div>
+  <div class="stat-card"><div class="val">0</div><div class="lbl">High Score (&ge;70)</div></div>
+  <div class="stat-card"><div class="val">0</div><div class="lbl">Debt &gt; $50k</div></div>
+</div>
+
+<div class="toolbar">
+  <input type="search" id="searchBox" placeholder="Search owner, address, city …" oninput="filterTable()">
+  <select id="scoreFilter" onchange="filterTable()">
+    <option value="0">All Scores</option>
+    <option value="70">High (70+)</option>
+    <option value="50">Medium (50+)</option>
+  </select>
+  <select id="flagFilter" onchange="filterTable()">
+    <option value="">All Flags</option>
+    <option>Tax lien</option>
+    <option>Lis pendens</option>
+    <option>Pre-foreclosure</option>
+    <option>Judgment lien</option>
+    <option>Mechanic lien</option>
+    <option>Probate / estate</option>
+    <option>LLC / corp owner</option>
+    <option>New this week</option>
+  </select>
+  <button class="btn" onclick="exportCSV()">⬇ Export CSV</button>
+  <span id="countLabel" style="color:var(--muted);font-size:12px;"></span>
+</div>
+
+<div class="table-wrap">
+  <table id="leadsTable">
+    <thead>
+      <tr>
+        <th onclick="sortTable(0)">Score ↕</th>
+        <th onclick="sortTable(1)">Owner</th>
+        <th onclick="sortTable(2)">Property Address</th>
+        <th onclick="sortTable(3)">Amount Owed ↕</th>
+        <th>Category</th>
+        <th>Flags</th>
+        <th onclick="sortTable(6)">Filed</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+
+    </tbody>
+  </table>
+  <div id="noData" class="no-data" style="display:none">No records match your filters.</div>
+</div>
+
+<script>
+const tbody = document.getElementById('tableBody');
+const allRows = Array.from(tbody.querySelectorAll('tr'));
+let sortDir = {};
+
+function filterTable() {
+  const q     = document.getElementById('searchBox').value.toLowerCase();
+  const minSc = parseInt(document.getElementById('scoreFilter').value) || 0;
+  const flag  = document.getElementById('flagFilter').value.toLowerCase();
+  let vis = 0;
+  allRows.forEach(tr => {
+    const text  = tr.textContent.toLowerCase();
+    const score = parseInt(tr.querySelector('.score-pill')?.textContent || '0');
+    const show  = (!q || text.includes(q))
+               && score >= minSc
+               && (!flag || text.includes(flag));
+    tr.style.display = show ? '' : 'none';
+    if (show) vis++;
+  });
+  document.getElementById('countLabel').textContent = vis + ' record(s) shown';
+  document.getElementById('noData').style.display = vis === 0 ? '' : 'none';
+}
+
+function sortTable(colIdx) {
+  const asc = !sortDir[colIdx];
+  sortDir = {};
+  sortDir[colIdx] = asc;
+  const sorted = allRows.slice().sort((a, b) => {
+    const av = a.cells[colIdx]?.textContent.trim() || '';
+    const bv = b.cells[colIdx]?.textContent.trim() || '';
+    const an = parseFloat(av.replace(/[^\d.]/g, ''));
+    const bn = parseFloat(bv.replace(/[^\d.]/g, ''));
+    if (!isNaN(an) && !isNaN(bn)) return asc ? an - bn : bn - an;
+    return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+  sorted.forEach(tr => tbody.appendChild(tr));
+}
+
+function exportCSV() {
+  const headers = ['Score','Owner','Property Address','Amount Owed','Category','Flags','Filed'];
+  const visRows = allRows.filter(tr => tr.style.display !== 'none');
+  const lines   = [headers.join(',')];
+  visRows.forEach(tr => {
+    const cells = Array.from(tr.cells).map(td => '"' + td.textContent.replace(/"/g,'""').trim() + '"');
+    lines.push(cells.join(','));
+  });
+  const blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = 'mecklenburg_leads.csv';
+  a.click();
+}
+
+// Initial count
+filterTable();
+</script>
+</body>
+</html>
