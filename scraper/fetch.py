@@ -517,7 +517,6 @@ def write_ghl_csv(records: list[dict[str, Any]]) -> None:
 # ---------------------------------------------------------------------------
 
 def write_dashboard_html(payload: dict[str, Any]) -> None:
-    import json as _json
     DASHBOARD_DIR.mkdir(parents=True, exist_ok=True)
     html_path = DASHBOARD_DIR / "index.html"
 
@@ -528,37 +527,13 @@ def write_dashboard_html(payload: dict[str, Any]) -> None:
     avg_score  = round(sum(r.get("score",0) for r in records) / max(len(records),1))
     total_debt = sum((r.get("amount") or 0) for r in records)
 
-    records_json = _json.dumps([{
-        "score":    r.get("score", 0),
-        "owner":    r.get("owner", ""),
-        "addr":     r.get("prop_address", ""),
-        "city":     r.get("prop_city", ""),
-        "state":    r.get("prop_state", ""),
-        "zip":      r.get("prop_zip", ""),
-        "amount":   r.get("amount", 0) or 0,
-        "cat":      r.get("cat_label", ""),
-        "cat_code": r.get("cat", ""),
-        "flags":    r.get("flags", []),
-        "filed":    r.get("filed", ""),
-        "doc_type": r.get("doc_type", ""),
-        "doc_num":  r.get("doc_num", ""),
-        "mail_addr":  r.get("mail_address",""),
-        "mail_city":  r.get("mail_city",""),
-        "mail_state": r.get("mail_state",""),
-        "mail_zip":   r.get("mail_zip",""),
-        "source":   r.get("source",""),
-        "url":      r.get("clerk_url",""),
-        "phone":    r.get("phone",""),
-        "email":    r.get("email",""),
-        "skiptrace":r.get("skiptrace_status",""),
-    } for r in records], default=str)
-
-    html = _build_dashboard_html(fetched, total, high_score, avg_score, total_debt, records_json)
+    html = _build_dashboard_html(fetched, total, high_score, avg_score, total_debt)
     html_path.write_text(html, encoding="utf-8")
     log.info("Wrote dashboard HTML -> %s", html_path)
 
 
-def _build_dashboard_html(fetched, total, high_score, avg_score, total_debt, records_json):
+def _build_dashboard_html(fetched, total, high_score, avg_score, total_debt):
+    """Generate dashboard HTML that loads records.json via fetch() — no inline data."""
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -572,7 +547,7 @@ def _build_dashboard_html(fetched, total, high_score, avg_score, total_debt, rec
 :root{{
   --bg:#0a0c0f;--panel:#0f1216;--card:#141820;--border:#1e2530;--border2:#252f3d;
   --accent:#00d4aa;--accent2:#0099ff;--warn:#f59e0b;--danger:#ef4444;
-  --text:#e8edf5;--text2:#8a96a8;--text3:#4a5568;--green:#22c55e;
+  --text:#e8edf5;--text2:#8a96a8;--text3:#4a5568;
   --mono:'IBM Plex Mono',monospace;--sans:'DM Sans',sans-serif;
 }}
 body{{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;display:flex;height:100vh;overflow:hidden}}
@@ -601,11 +576,11 @@ body{{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:1
 .bl{{background:rgba(0,212,170,.15);color:var(--accent)}}
 .bu{{background:rgba(245,158,11,.15);color:var(--warn)}}
 .bs{{background:rgba(74,85,104,.2);color:var(--text3)}}
-.reset-btn{{width:100%;margin-top:10px;padding:6px;background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer;font-size:10px;font-family:var(--sans);transition:all .15s}}
+.reset-btn{{width:100%;margin-top:10px;padding:6px;background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer;font-size:10px;transition:all .15s}}
 .reset-btn:hover{{border-color:var(--accent);color:var(--accent)}}
 #main{{flex:1;display:flex;flex-direction:column;overflow:hidden}}
 #topbar{{background:var(--panel);border-bottom:1px solid var(--border);padding:0 18px;display:flex;align-items:center;gap:10px;height:50px;flex-shrink:0}}
-#searchBox{{flex:1;max-width:320px;background:var(--card);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:7px 12px 7px 30px;font-size:12px;outline:none;font-family:var(--sans)}}
+#searchBox{{flex:1;max-width:320px;background:var(--card);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:7px 12px 7px 30px;font-size:12px;outline:none}}
 #searchBox:focus{{border-color:var(--accent)}}
 .sw{{position:relative}}
 .sw::before{{content:'';position:absolute;left:9px;top:50%;transform:translateY(-50%);width:12px;height:12px;border:1.5px solid var(--text3);border-radius:50%;pointer-events:none}}
@@ -617,7 +592,7 @@ body{{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:1
 .tbs .val.wn{{color:var(--warn)}}
 .tbs .lbl{{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-top:1px}}
 .tb-div{{width:1px;height:28px;background:var(--border)}}
-.exp-btn{{background:var(--accent);color:#000;border:none;border-radius:5px;padding:6px 13px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);white-space:nowrap;transition:opacity .15s}}
+.exp-btn{{background:var(--accent);color:#000;border:none;border-radius:5px;padding:6px 13px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .15s}}
 .exp-btn:hover{{opacity:.85}}
 #tabs{{display:flex;padding:0 18px;border-bottom:1px solid var(--border);background:var(--panel);flex-shrink:0}}
 .tab{{padding:10px 14px;font-size:11px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}}
@@ -628,13 +603,13 @@ table{{width:100%;border-collapse:collapse;font-size:12px}}
 thead{{position:sticky;top:0;z-index:10}}
 thead th{{background:var(--card);color:var(--text3);font-weight:500;font-size:10px;text-transform:uppercase;letter-spacing:.07em;padding:9px 13px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;font-family:var(--mono)}}
 thead th:hover{{color:var(--text2)}}
-thead th.sa::after{{content:' \u2191';color:var(--accent)}}
-thead th.sd::after{{content:' \u2193';color:var(--accent)}}
+thead th.sa::after{{content:' ↑';color:var(--accent)}}
+thead th.sd::after{{content:' ↓';color:var(--accent)}}
 tbody tr{{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}}
 tbody tr:hover{{background:rgba(0,212,170,.04)}}
 tbody tr.sel{{background:rgba(0,212,170,.08)!important}}
 td{{padding:8px 13px;vertical-align:middle;color:var(--text2)}}
-td.ac{{color:var(--text);font-weight:400}}
+td.ac{{color:var(--text)}}
 td.oc{{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 .sd2{{display:inline-flex;align-items:center;justify-content:center;width:30px;height:20px;border-radius:3px;font-family:var(--mono);font-size:11px;font-weight:500}}
 .sh{{background:rgba(34,197,94,.15);color:#22c55e}}
@@ -648,9 +623,10 @@ td.oc{{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ov
 .amc{{font-family:var(--mono);font-size:11px;color:var(--text)}}
 .amc.big{{color:#f59e0b}}
 #nd{{display:none;text-align:center;padding:60px;color:var(--text3);font-size:13px}}
+#loading{{text-align:center;padding:60px;color:var(--text3);font-size:13px;font-family:var(--mono)}}
 #pb{{background:var(--panel);border-top:1px solid var(--border);padding:7px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0}}
 #pb .pc{{font-size:10px;color:var(--text3);font-family:var(--mono)}}
-#pb .pctrls{{display:flex;gap:3px;margin-left:auto}}
+.pctrls{{display:flex;gap:3px;margin-left:auto}}
 .pgb{{background:var(--card);border:1px solid var(--border2);color:var(--text2);padding:3px 9px;border-radius:4px;cursor:pointer;font-size:10px;font-family:var(--mono);transition:all .15s}}
 .pgb:hover{{border-color:var(--accent);color:var(--accent)}}
 .pgb.act{{background:var(--accent);color:#000;border-color:var(--accent)}}
@@ -676,11 +652,10 @@ td.oc{{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ov
 .dr .dv.big{{color:var(--warn);font-family:var(--mono);font-size:12px;font-weight:500}}
 .dfl{{padding:9px 15px;border-bottom:1px solid var(--border)}}
 .dfi{{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;color:var(--text2)}}
-.dfi::before{{content:'\u25c6';font-size:6px;color:var(--accent)}}
+.dfi::before{{content:'\25c6';font-size:6px;color:var(--accent)}}
 .dacts{{padding:11px 15px;display:flex;flex-direction:column;gap:6px}}
-.abt{{width:100%;padding:7px;border-radius:5px;font-size:10px;font-weight:500;cursor:pointer;text-align:center;font-family:var(--sans);transition:all .15s;border:none}}
+.abt{{width:100%;padding:7px;border-radius:5px;font-size:10px;font-weight:500;cursor:pointer;text-align:center;transition:all .15s;border:none}}
 .abp{{background:var(--accent);color:#000}}
-.abp:hover{{opacity:.85}}
 .abs{{background:transparent;border:1px solid var(--border2)!important;color:var(--text2)}}
 .abs:hover{{border-color:var(--accent)!important;color:var(--accent)}}
 </style>
@@ -692,8 +667,7 @@ td.oc{{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ov
     <div class="title">Motivated Seller<br>Intelligence</div>
     <div class="updated">Updated: {fetched[:10]}</div>
   </div>
-  <div class="sb"><div class="sbl">Categories</div>
-  <div class="filter-group">
+  <div class="sb"><div class="sbl">Categories</div><div class="filter-group">
     <label><input type="checkbox" class="cf" value="TAXDEL" checked> Tax Delinquent <span class="fc" id="c-TAXDEL">0</span></label>
     <label><input type="checkbox" class="cf" value="LP"> Lis Pendens <span class="fc" id="c-LP">0</span></label>
     <label><input type="checkbox" class="cf" value="NOFC"> Foreclosure <span class="fc" id="c-NOFC">0</span></label>
@@ -712,9 +686,8 @@ td.oc{{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ov
     <label><input type="checkbox" class="cf" value="NOC"> Notice of Comm. <span class="fc" id="c-NOC">0</span></label>
     <label><input type="checkbox" class="cf" value="RELLP"> Release LP <span class="fc" id="c-RELLP">0</span></label>
   </div></div>
-  <div class="sb"><div class="sbl">Motivated Seller Flags</div>
-  <div class="filter-group">
-    <label><input type="checkbox" class="ff" value="Tax lien" checked> Tax lien</label>
+  <div class="sb"><div class="sbl">Motivated Seller Flags</div><div class="filter-group">
+    <label><input type="checkbox" class="ff" value="Tax lien"> Tax lien</label>
     <label><input type="checkbox" class="ff" value="Lis pendens"> Lis pendens</label>
     <label><input type="checkbox" class="ff" value="Pre-foreclosure"> Pre-foreclosure</label>
     <label><input type="checkbox" class="ff" value="Judgment lien"> Judgment lien</label>
@@ -724,17 +697,13 @@ td.oc{{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ov
     <label><input type="checkbox" class="ff" value="New this week"> New this week</label>
   </div></div>
   <div class="sb"><div class="sbl">Min Seller Score</div>
-  <div class="score-range">
-    <label>Score <span id="sv">0</span>+</label>
-    <input type="range" id="sr" min="0" max="100" value="0" oninput="document.getElementById('sv').textContent=this.value;af()">
-  </div></div>
+    <div class="score-range"><label>Score <span id="sv">0</span>+</label>
+    <input type="range" id="sr" min="0" max="100" value="0" oninput="document.getElementById('sv').textContent=this.value;af()"></div>
+  </div>
   <div class="sb"><div class="sbl">Amount Due</div>
-  <div class="amt-inputs">
-    <input type="number" id="amn" placeholder="Min $" oninput="af()">
-    <input type="number" id="amx" placeholder="Max $" oninput="af()">
-  </div></div>
-  <div class="sb"><div class="sbl">Skip Trace Status</div>
-  <div class="filter-group">
+    <div class="amt-inputs"><input type="number" id="amn" placeholder="Min $" oninput="af()"><input type="number" id="amx" placeholder="Max $" oninput="af()"></div>
+  </div>
+  <div class="sb"><div class="sbl">Skip Trace Status</div><div class="filter-group">
     <label><input type="checkbox" class="skf" value="" checked> All</label>
     <label><input type="checkbox" class="skf" value="complete"> Complete</label>
     <label><input type="checkbox" class="skf" value="pending"> Pending</label>
@@ -754,13 +723,13 @@ td.oc{{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ov
   <div id="topbar">
     <div class="sw"><input type="text" id="searchBox" placeholder="Search address, owner, doc type..." oninput="af()"></div>
     <div class="tb-stats">
-      <div class="tbs"><div class="val ac" id="ss">{total}</div><div class="lbl">Showing</div></div>
+      <div class="tbs"><div class="val ac" id="ss">...</div><div class="lbl">Showing</div></div>
       <div class="tb-div"></div>
-      <div class="tbs"><div class="val ac" id="sh">{high_score}</div><div class="lbl">Hot Leads</div></div>
+      <div class="tbs"><div class="val ac" id="sh">...</div><div class="lbl">Hot Leads</div></div>
       <div class="tb-div"></div>
-      <div class="tbs"><div class="val wn" id="sa">{avg_score}</div><div class="lbl">Avg Score</div></div>
+      <div class="tbs"><div class="val wn" id="sa">...</div><div class="lbl">Avg Score</div></div>
       <div class="tb-div"></div>
-      <div class="tbs"><div class="val" id="sd">${total_debt:,.0f}</div><div class="lbl">Total Exposure</div></div>
+      <div class="tbs"><div class="val" id="sd">...</div><div class="lbl">Total Exposure</div></div>
     </div>
     <button class="exp-btn" onclick="ec()">Export CSV</button>
   </div>
@@ -774,7 +743,8 @@ td.oc{{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ov
     <div class="tab" onclick="st(this,'export')">Export + Mail</div>
   </div>
   <div id="tw">
-    <table id="lt">
+    <div id="loading">Loading records...</div>
+    <table id="lt" style="display:none">
       <thead><tr>
         <th onclick="sb('addr')" id="h-addr">Address</th>
         <th onclick="sb('owner')" id="h-owner">Owner</th>
@@ -805,86 +775,90 @@ td.oc{{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ov
   <div id="db"></div>
 </div>
 <script>
-const R=JSON.parse(document.getElementById('rd').textContent);
+let R=[],fil=[],sk='score',sortAsc=false,cp=1,tab='all';
 const FM={{'Tax lien':'d0','Lis pendens':'d1','Pre-foreclosure':'d2','Judgment lien':'d3','Mechanic lien':'d4','Probate / estate':'d5','LLC / corp owner':'d6','New this week':'d7'}};
-let fil=[...R],sk='score',sa2=false,cp=1,tab='all';
-const cc={{}};
-R.forEach(r=>{{cc[r.cat_code]=(cc[r.cat_code]||0)+1}});
-Object.entries(cc).forEach(([k,v])=>{{const e=document.getElementById('c-'+k);if(e)e.textContent=v.toLocaleString()}});
+
+fetch('records.json')
+  .then(r=>r.json())
+  .then(data=>{{
+    R = data.records || [];
+    document.getElementById('loading').style.display='none';
+    document.getElementById('lt').style.display='';
+    const cc={{}};
+    R.forEach(r=>{{cc[r.cat_code]=(cc[r.cat_code]||0)+1}});
+    Object.entries(cc).forEach(([k,v])=>{{const e=document.getElementById('c-'+k);if(e)e.textContent=v.toLocaleString()}});
+    document.getElementById('h-score').classList.add('sd');
+    af();
+  }})
+  .catch(e=>{{document.getElementById('loading').textContent='Error loading records: '+e.message}});
+
 function af(){{
   const q=document.getElementById('searchBox').value.toLowerCase();
   const ms=parseInt(document.getElementById('sr').value)||0;
-  const an2=parseFloat(document.getElementById('amn').value)||0;
+  const an=parseFloat(document.getElementById('amn').value)||0;
   const ax=parseFloat(document.getElementById('amx').value)||Infinity;
   const cats=new Set([...document.querySelectorAll('.cf:checked')].map(e=>e.value));
   const flags=[...document.querySelectorAll('.ff:checked')].map(e=>e.value).filter(Boolean);
   fil=R.filter(r=>{{
     if(!cats.has(r.cat_code))return false;
     if(r.score<ms)return false;
-    if(r.amount<an2||r.amount>ax)return false;
-    if(flags.length&&!flags.some(f=>r.flags.includes(f)))return false;
-    if(q){{const h=(r.addr+' '+r.city+' '+r.owner+' '+r.cat+' '+r.doc_type).toLowerCase();if(!h.includes(q))return false}}
+    if((r.amount||0)<an||(r.amount||0)>ax)return false;
+    if(flags.length&&!flags.some(f=>(r.flags||[]).includes(f)))return false;
+    if(q){{const h=((r.addr||'')+' '+(r.city||'')+' '+(r.owner||'')+' '+(r.cat||'')+' '+(r.doc_type||'')).toLowerCase();if(!h.includes(q))return false}}
     if(tab==='foreclosure'&&r.cat_code!=='NOFC')return false;
     if(tab==='taxdel'&&r.cat_code!=='TAXDEL')return false;
     return true;
   }});
-  sd2();cp=1;rn();us();
+  srt();cp=1;rn();us();
 }}
-function sd2(){{
+function srt(){{
   fil.sort((a,b)=>{{
-    let av=a[sk],bv=b[sk];
+    let av=a[sk]??'',bv=b[sk]??'';
     if(typeof av==='string')av=av.toLowerCase();
     if(typeof bv==='string')bv=bv.toLowerCase();
-    if(av<bv)return sa2?-1:1;if(av>bv)return sa2?1:-1;return 0;
+    if(av<bv)return sortAsc?-1:1;if(av>bv)return sortAsc?1:-1;return 0;
   }});
 }}
 function sb(k){{
-  if(sk===k)sa2=!sa2;else{{sk=k;sa2=false}}
+  if(sk===k)sortAsc=!sortAsc;else{{sk=k;sortAsc=false}}
   document.querySelectorAll('thead th').forEach(t=>t.classList.remove('sa','sd'));
-  const h=document.getElementById('h-'+k);
-  if(h)h.classList.add(sa2?'sa':'sd');
-  sd2();rn();
+  const h=document.getElementById('h-'+k);if(h)h.classList.add(sortAsc?'sa':'sd');
+  srt();rn();
 }}
 function rn(){{
-  const pp=parseInt(document.getElementById('pp').value);
-  const st2=(cp-1)*pp;
-  const pg=fil.slice(st2,st2+pp);
+  const pp=parseInt(document.getElementById('pp').value)||100;
+  const st=(cp-1)*pp;
+  const pg=fil.slice(st,st+pp);
   const tbody=document.getElementById('tb');
-  tbody.innerHTML=pg.map((r,i)=>{{
-    const gi=st2+i;
+  const rows=[];
+  for(let i=0;i<pg.length;i++){{
+    const r=pg[i],gi=st+i;
     const sc=r.score>=70?'sh':r.score>=50?'sm':'sl';
-    const addr=[r.addr,r.city,r.state,r.zip].filter(Boolean).join(', ')||'&mdash;';
-    const amt=r.amount?'$'+r.amount.toLocaleString('en-US',{{minimumFractionDigits:2,maximumFractionDigits:2}}):'&mdash;';
-    const ac2=r.amount>50000?'amc big':'amc';
-    const dots=r.flags.map(f=>`<span class="dot ${{FM[f]||''}}" title="${{f}}"></span>`).join('');
-    return `<tr onclick="sr2(${{gi}})" data-i="${{gi}}">
-      <td class="ac">${{addr}}</td><td class="oc">${{r.owner||'&mdash;'}}</td>
-      <td><span class="chip">${{r.cat_code}}</span></td>
-      <td style="color:var(--text2)">${{r.doc_type||'&mdash;'}}</td>
-      <td style="font-family:var(--mono);color:var(--text3)">${{r.filed||'&mdash;'}}</td>
-      <td class="${{ac2}}">${{amt}}</td>
-      <td><span class="sd2 ${{sc}}">${{r.score}}</span></td>
-      <td><div class="fd">${{dots}}</div></td>
-    </tr>`;
-  }}).join('');
+    const addr=[(r.addr||''),(r.city||''),(r.state||''),(r.zip||'')].filter(Boolean).join(', ')||'&mdash;';
+    const amt=(r.amount||0)>0?'$'+(r.amount).toLocaleString('en-US',{{minimumFractionDigits:2,maximumFractionDigits:2}}):'&mdash;';
+    const ac=(r.amount||0)>50000?'amc big':'amc';
+    const dots=(r.flags||[]).map(f=>'<span class="dot '+(FM[f]||'')+'" title="'+f+'"></span>').join('');
+    rows.push('<tr onclick="sr2('+gi+')" data-i="'+gi+'"><td class="ac">'+addr+'</td><td class="oc">'+(r.owner||'&mdash;')+'</td><td><span class="chip">'+(r.cat_code||'')+'</span></td><td style="color:var(--text2)">'+(r.doc_type||'&mdash;')+'</td><td style="font-family:var(--mono);color:var(--text3)">'+(r.filed||'&mdash;')+'</td><td class="'+ac+'">'+amt+'</td><td><span class="sd2 '+sc+'">'+r.score+'</span></td><td><div class="fd">'+dots+'</div></td></tr>');
+  }}
+  tbody.innerHTML=rows.join('');
   document.getElementById('nd').style.display=fil.length===0?'block':'none';
   rp(pp);
 }}
 function rp(pp){{
-  const tot=fil.length,pages=Math.ceil(tot/pp);
-  const st2=(cp-1)*pp+1,en=Math.min(cp*pp,tot);
-  document.getElementById('pi').textContent=st2.toLocaleString()+'\u2013'+en.toLocaleString()+' of '+tot.toLocaleString();
+  const tot=fil.length,pages=Math.max(1,Math.ceil(tot/pp));
+  const st=(cp-1)*pp+1,en=Math.min(cp*pp,tot);
+  document.getElementById('pi').textContent=(tot>0?st.toLocaleString()+'–'+en.toLocaleString():0)+' of '+tot.toLocaleString();
   const ctrl=document.getElementById('pc');
-  let h=`<button class="pgb" onclick="gp(${{cp-1}})" ${{cp<=1?'disabled':''}}>&#8249; Prev</button>`;
+  let h='<button class="pgb" onclick="gp('+(cp-1)+')" '+(cp<=1?'disabled':'')+'>&#8249; Prev</button>';
   let sp=Math.max(1,cp-2),ep=Math.min(pages,sp+4);
   if(ep-sp<4)sp=Math.max(1,ep-4);
-  if(sp>1)h+=`<button class="pgb" onclick="gp(1)">1</button><span style="color:var(--text3);padding:0 3px">\u2026</span>`;
-  for(let p=sp;p<=ep;p++)h+=`<button class="pgb ${{p===cp?'act':''}}" onclick="gp(${{p}})">${{p}}</button>`;
-  if(ep<pages)h+=`<span style="color:var(--text3);padding:0 3px">\u2026</span><button class="pgb" onclick="gp(${{pages}})">${{pages}}</button>`;
-  h+=`<button class="pgb" onclick="gp(${{cp+1}})" ${{cp>=pages?'disabled':''}}>Next &#8250;</button>`;
+  if(sp>1)h+='<button class="pgb" onclick="gp(1)">1</button><span style="color:var(--text3);padding:0 3px">&hellip;</span>';
+  for(let p=sp;p<=ep;p++)h+='<button class="pgb '+(p===cp?'act':'')+'" onclick="gp('+p+')">'+p+'</button>';
+  if(ep<pages)h+='<span style="color:var(--text3);padding:0 3px">&hellip;</span><button class="pgb" onclick="gp('+pages+')">'+pages+'</button>';
+  h+='<button class="pgb" onclick="gp('+(cp+1)+')" '+(cp>=pages?'disabled':'')+'>Next &#8250;</button>';
   ctrl.innerHTML=h;
 }}
-function gp(p){{const pp=parseInt(document.getElementById('pp').value);const pages=Math.ceil(fil.length/pp);cp=Math.max(1,Math.min(p,pages));rn();document.getElementById('tw').scrollTop=0;}}
+function gp(p){{const pp=parseInt(document.getElementById('pp').value)||100;const pages=Math.max(1,Math.ceil(fil.length/pp));cp=Math.max(1,Math.min(p,pages));rn();document.getElementById('tw').scrollTop=0;}}
 function us(){{
   const n=fil.length,hot=fil.filter(r=>r.score>=70).length;
   const avg=n?Math.round(fil.reduce((s,r)=>s+r.score,0)/n):0;
@@ -896,47 +870,22 @@ function us(){{
 }}
 function sr2(idx){{
   document.querySelectorAll('#tb tr').forEach(t=>t.classList.remove('sel'));
-  const tr=document.querySelector(`#tb tr[data-i="${{idx}}"]`);
+  const tr=document.querySelector('#tb tr[data-i="'+idx+'"]');
   if(tr)tr.classList.add('sel');
   const r=fil[idx];if(!r)return;
   const sc=r.score>=70?'sh':r.score>=50?'sm':'sl';
   const lbl=r.score>=70?'High motivation':r.score>=50?'Medium motivation':'Low motivation';
-  const addr=[r.addr,r.city,r.state,r.zip].filter(Boolean).join(', ')||'&mdash;';
-  const amt=r.amount?'$'+r.amount.toLocaleString('en-US',{{minimumFractionDigits:2}}):'&mdash;';
-  const fi=r.flags.map(f=>`<div class="dfi">${{f}}</div>`).join('');
-  document.getElementById('db').innerHTML=`
-    <div class="dscore"><div><div class="dsn ${{sc}}">${{r.score}}</div><div class="dsl">Seller score</div></div>
-    <div class="dsr">${{lbl}}<br><span style="color:var(--text3)">${{r.flags.length}} signal${{r.flags.length!==1?'s':''}}</span></div></div>
-    <div class="ds"><div class="dst">Property</div>
-      <div class="dr"><span class="dk">Address</span><span class="dv">${{addr}}</span></div>
-      <div class="dr"><span class="dk">City / Zip</span><span class="dv">${{r.city||'&mdash;'}} ${{r.zip||''}}</span></div>
-    </div>
-    <div class="ds"><div class="dst">Owner</div>
-      <div class="dr"><span class="dk">Name</span><span class="dv">${{r.owner||'&mdash;'}}</span></div>
-      <div class="dr"><span class="dk">Phone</span><span class="dv mn">${{r.phone||'&mdash;'}}</span></div>
-      <div class="dr"><span class="dk">Email</span><span class="dv">${{r.email||'&mdash;'}}</span></div>
-      <div class="dr"><span class="dk">Skip Trace</span><span class="dv">${{r.skiptrace||'Not run'}}</span></div>
-    </div>
-    <div class="ds"><div class="dst">Filing</div>
-      <div class="dr"><span class="dk">Doc #</span><span class="dv mn">${{r.doc_num||'&mdash;'}}</span></div>
-      <div class="dr"><span class="dk">Category</span><span class="dv">${{r.cat_code}}</span></div>
-      <div class="dr"><span class="dk">Filed</span><span class="dv mn">${{r.filed||'&mdash;'}}</span></div>
-      <div class="dr"><span class="dk">Amt Due</span><span class="dv big">${{amt}}</span></div>
-    </div>
-    ${{r.flags.length?`<div class="dfl"><div class="dst">Motivated Seller Signals</div>${{fi}}</div>`:''}}
-    <div class="dacts">
-      ${{r.url?`<a href="${{r.url}}" target="_blank" style="text-decoration:none"><button class="abt abs">View Public Record &#x2197;</button></a>`:''}}
-      <button class="abt abs" onclick="alert('Skip trace integration coming soon')">Run Skip Trace</button>
-      <button class="abt abs" onclick="alert('Deal analyzer coming soon')">Run Deal Analysis</button>
-      <button class="abt abs" onclick="alert('Stack feature coming soon')">Add to Stack</button>
-    </div>`;
+  const addr=[(r.addr||''),(r.city||''),(r.state||''),(r.zip||'')].filter(Boolean).join(', ')||'&mdash;';
+  const amt=(r.amount||0)?'$'+(r.amount).toLocaleString('en-US',{{minimumFractionDigits:2}}):'&mdash;';
+  const fi=(r.flags||[]).map(f=>'<div class="dfi">'+f+'</div>').join('');
+  document.getElementById('db').innerHTML='<div class="dscore"><div><div class="dsn '+sc+'">'+r.score+'</div><div class="dsl">Seller score</div></div><div class="dsr">'+lbl+'<br><span style="color:var(--text3)">'+(r.flags||[]).length+' signal'+((r.flags||[]).length!==1?'s':'')+'</span></div></div><div class="ds"><div class="dst">Property</div><div class="dr"><span class="dk">Address</span><span class="dv">'+addr+'</span></div><div class="dr"><span class="dk">City / Zip</span><span class="dv">'+(r.city||'&mdash;')+' '+(r.zip||'')+'</span></div></div><div class="ds"><div class="dst">Owner</div><div class="dr"><span class="dk">Name</span><span class="dv">'+(r.owner||'&mdash;')+'</span></div><div class="dr"><span class="dk">Phone</span><span class="dv mn">'+(r.phone||'&mdash;')+'</span></div><div class="dr"><span class="dk">Email</span><span class="dv">'+(r.email||'&mdash;')+'</span></div><div class="dr"><span class="dk">Skip Trace</span><span class="dv">'+(r.skiptrace||'Not run')+'</span></div></div><div class="ds"><div class="dst">Filing</div><div class="dr"><span class="dk">Doc #</span><span class="dv mn">'+(r.doc_num||'&mdash;')+'</span></div><div class="dr"><span class="dk">Category</span><span class="dv">'+(r.cat_code||'')+'</span></div><div class="dr"><span class="dk">Filed</span><span class="dv mn">'+(r.filed||'&mdash;')+'</span></div><div class="dr"><span class="dk">Amt Due</span><span class="dv big">'+amt+'</span></div></div>'+(fi?'<div class="dfl"><div class="dst">Motivated Seller Signals</div>'+fi+'</div>':'')+'<div class="dacts">'+(r.url?'<a href="'+r.url+'" target="_blank" style="text-decoration:none"><button class="abt abs">View Public Record &#x2197;</button></a>':'')+'<button class="abt abs" onclick="alert('Skip trace coming soon')">Run Skip Trace</button><button class="abt abs" onclick="alert('Deal analyzer coming soon')">Run Deal Analysis</button><button class="abt abs" onclick="alert('Stack coming soon')">Add to Stack</button></div>';
   document.getElementById('dp').classList.remove('closed');
 }}
 function cd(){{document.getElementById('dp').classList.add('closed');document.querySelectorAll('#tb tr').forEach(t=>t.classList.remove('sel'));}}
 function st(el,t){{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');tab=t;af();}}
 function rf(){{
   document.querySelectorAll('.cf').forEach(e=>e.checked=true);
-  document.querySelectorAll('.ff').forEach(e=>e.checked=e.value==='Tax lien');
+  document.querySelectorAll('.ff').forEach(e=>e.checked=false);
   document.getElementById('sr').value=0;document.getElementById('sv').textContent='0';
   document.getElementById('amn').value='';document.getElementById('amx').value='';
   document.getElementById('searchBox').value='';af();
@@ -944,14 +893,11 @@ function rf(){{
 function ec(){{
   const h=['Score','Owner','Property Address','City','State','Zip','Amount Due','Category','Doc Type','Filed','Flags','Phone','Email','Skip Trace','Source','URL'];
   const lines=[h.join(',')];
-  fil.forEach(r=>lines.push([r.score,'"'+(r.owner||'').replace(/"/g,'""')+'"','"'+(r.addr||'').replace(/"/g,'""')+'"',r.city||'',r.state||'',r.zip||'',r.amount||'','"'+(r.cat||'').replace(/"/g,'""')+'"','"'+(r.doc_type||'').replace(/"/g,'""')+'"',r.filed||'','"'+(r.flags||[]).join('|')+'"',r.phone||'',r.email||'',r.skiptrace||'',r.source||'',r.url||''].join(',')));
-  const b=new Blob([lines.join('\\n')],{{type:'text/csv'}});
+  fil.forEach(r=>lines.push([r.score,'"'+(r.owner||'').replace(/"/g,'""')+'"','"'+(r.addr||'').replace(/"/g,'""')+'"',(r.city||''),(r.state||''),(r.zip||''),(r.amount||0),'"'+(r.cat||'').replace(/"/g,'""')+'"','"'+(r.doc_type||'').replace(/"/g,'""')+'"',(r.filed||''),'"'+((r.flags||[]).join('|'))+'"',(r.phone||''),(r.email||''),(r.skiptrace||''),(r.source||''),(r.url||'')].join(',')));
+  const b=new Blob([lines.join('\n')],{{type:'text/csv'}});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='mecklenburg_leads.csv';a.click();
 }}
-document.getElementById('h-score').classList.add('sd');
-af();
 </script>
-<script type="application/json" id="rd">{records_json}</script>
 </body>
 </html>"""
 
