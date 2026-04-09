@@ -564,51 +564,16 @@ def write_ghl_csv(records: list[dict[str, Any]]) -> None:
 # ---------------------------------------------------------------------------
 
 def write_dashboard_html(payload: dict[str, Any]) -> None:
-    import json as _json
     DASHBOARD_DIR.mkdir(parents=True, exist_ok=True)
     html_path = DASHBOARD_DIR / "index.html"
-
-    records    = payload.get("records", [])
-    total      = payload.get("total", 0)
-    fetched    = payload.get("fetched_at", "")
-    high_score = sum(1 for r in records if r.get("score", 0) >= 70)
-    avg_score  = round(sum(r.get("score",0) for r in records) / max(len(records),1))
-    total_debt = sum((r.get("amount") or 0) for r in records)
-
-    # Build slim records sorted by score, capped at 5000
-    top = sorted(records, key=lambda r: r.get("score",0), reverse=True)[:5000]
-    slim = []
-    for r in top:
-        slim.append({
-            "score":    r.get("score", 0),
-            "owner":    r.get("owner", ""),
-            "addr":     r.get("prop_address", ""),
-            "city":     r.get("prop_city", ""),
-            "state":    r.get("prop_state", ""),
-            "zip":      r.get("prop_zip", ""),
-            "amount":   r.get("amount", 0) or 0,
-            "cat":      r.get("cat_label", ""),
-            "cat_code": r.get("cat", ""),
-            "flags":    r.get("flags", []),
-            "filed":    r.get("filed", ""),
-            "doc_type": r.get("doc_type", ""),
-            "doc_num":  r.get("doc_num", ""),
-            "url":      r.get("clerk_url", ""),
-            "phone":    r.get("phone", ""),
-            "email":    r.get("email", ""),
-            "skiptrace":r.get("skiptrace_status", ""),
-        })
-
-    # Embed data directly — no fetch needed, works instantly
-    records_js = _json.dumps(slim, separators=(',',':'), default=str)
-    html = _build_dashboard_html(fetched, total, high_score, avg_score, total_debt, records_js)
+    fetched = payload.get("fetched_at", "")
+    html = _build_dashboard_html(fetched)
     html_path.write_text(html, encoding="utf-8")
-    log.info("Wrote dashboard HTML -> %s  (%d records embedded, %d KB)",
-             html_path, len(slim), len(html)//1024)
+    log.info("Wrote dashboard HTML -> %s  (%d KB)", html_path, len(html)//1024)
 
 
-def _build_dashboard_html(fetched, total, high_score, avg_score, total_debt, records_js="[]"):
-    """Generate dashboard HTML with data embedded inline — no fetch needed."""
+def _build_dashboard_html(fetched):
+    """Generate dashboard HTML that fetches records.json at load time."""
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -853,15 +818,21 @@ td.oc{{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ov
 let R=[],fil=[],sk='score',sortAsc=false,cp=1,tab='all';
 const FM={{'Tax lien':'d0','Lis pendens':'d1','Pre-foreclosure':'d2','Judgment lien':'d3','Mechanic lien':'d4','Probate / estate':'d5','LLC / corp owner':'d6','New this week':'d7'}};
 
-// Data embedded at scrape time — no fetch needed
-document.getElementById('h-score').classList.add('sd');
-R = {records_js};
-document.getElementById('loading').style.display='none';
-document.getElementById('lt').style.display='';
-const cc={{}};
-R.forEach(r=>{{cc[r.cat_code]=(cc[r.cat_code]||0)+1}});
-Object.entries(cc).forEach(([k,v])=>{{const e=document.getElementById('c-'+k);if(e)e.textContent=v.toLocaleString()}});
-af();
+fetch('./records.json')
+  .then(r=>{{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}})
+  .then(data=>{{
+    R=data.records||[];
+    document.getElementById('loading').style.display='none';
+    document.getElementById('lt').style.display='';
+    document.getElementById('h-score').classList.add('sd');
+    const cc={{}};
+    R.forEach(r=>{{cc[r.cat_code]=(cc[r.cat_code]||0)+1}});
+    Object.entries(cc).forEach(([k,v])=>{{const e=document.getElementById('c-'+k);if(e)e.textContent=v.toLocaleString()}});
+    af();
+  }})
+  .catch(e=>{{
+    document.getElementById('loading').innerHTML='<span style="color:#ef4444">Failed to load data: '+e.message+'</span>';
+  }});
 
 function af(){{
   const q=document.getElementById('searchBox').value.toLowerCase();
