@@ -579,18 +579,19 @@ def _build_dashboard_html(fetched):
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mecklenburg County — Motivated Seller Intelligence</title>
+<title>Mecklenburg | Motivated Seller Intelligence</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0}}
 :root{{
   --bg:#0a0c0f;--panel:#0f1216;--card:#141820;--border:#1e2530;--border2:#252f3d;
   --accent:#00d4aa;--accent2:#0099ff;--warn:#f59e0b;--danger:#ef4444;
   --text:#e8edf5;--text2:#8a96a8;--text3:#4a5568;
-  --mono:'IBM Plex Mono',monospace;--sans:'DM Sans',sans-serif;
+  --font:'Space Grotesk',sans-serif;--mono:'Space Mono',monospace;
 }}
-body{{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;display:flex;height:100vh;overflow:hidden}}
+body{{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;display:flex;height:100vh;overflow:hidden}}
 #sidebar{{width:220px;min-width:220px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}}
 .sidebar-logo{{padding:18px 16px 12px;border-bottom:1px solid var(--border)}}
 .sidebar-logo .county{{font-size:10px;color:var(--accent);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}}
@@ -707,25 +708,6 @@ td.oc{{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ov
     <div class="title">Motivated Seller<br>Intelligence</div>
     <div class="updated">Updated: {fetched[:10]}</div>
   </div>
-  <div class="sb"><div class="sbl">Categories</div><div class="filter-group">
-    <label><input type="checkbox" class="cf" value="TAXDEL" checked> Tax Delinquent <span class="fc" id="c-TAXDEL">0</span></label>
-    <label><input type="checkbox" class="cf" value="LP"> Lis Pendens <span class="fc" id="c-LP">0</span></label>
-    <label><input type="checkbox" class="cf" value="NOFC"> Foreclosure <span class="fc" id="c-NOFC">0</span></label>
-    <label><input type="checkbox" class="cf" value="TAXDEED"> Tax Deed <span class="fc" id="c-TAXDEED">0</span></label>
-    <label><input type="checkbox" class="cf" value="JUD"> Judgment <span class="fc" id="c-JUD">0</span></label>
-    <label><input type="checkbox" class="cf" value="CCJ"> Cert. Judgment <span class="fc" id="c-CCJ">0</span></label>
-    <label><input type="checkbox" class="cf" value="DRJUD"> Dom. Judgment <span class="fc" id="c-DRJUD">0</span></label>
-    <label><input type="checkbox" class="cf" value="LNCORPTX"> Corp Tax Lien <span class="fc" id="c-LNCORPTX">0</span></label>
-    <label><input type="checkbox" class="cf" value="LNIRS"> IRS Lien <span class="fc" id="c-LNIRS">0</span></label>
-    <label><input type="checkbox" class="cf" value="LNFED"> Federal Lien <span class="fc" id="c-LNFED">0</span></label>
-    <label><input type="checkbox" class="cf" value="LN"> Lien <span class="fc" id="c-LN">0</span></label>
-    <label><input type="checkbox" class="cf" value="LNMECH"> Mechanic Lien <span class="fc" id="c-LNMECH">0</span></label>
-    <label><input type="checkbox" class="cf" value="LNHOA"> HOA Lien <span class="fc" id="c-LNHOA">0</span></label>
-    <label><input type="checkbox" class="cf" value="MEDLN"> Medicaid Lien <span class="fc" id="c-MEDLN">0</span></label>
-    <label><input type="checkbox" class="cf" value="PRO"> Probate <span class="fc" id="c-PRO">0</span></label>
-    <label><input type="checkbox" class="cf" value="NOC"> Notice of Comm. <span class="fc" id="c-NOC">0</span></label>
-    <label><input type="checkbox" class="cf" value="RELLP"> Release LP <span class="fc" id="c-RELLP">0</span></label>
-  </div></div>
   <div class="sb"><div class="sbl">Motivated Seller Flags</div><div class="filter-group">
     <label><input type="checkbox" class="ff" value="Tax lien"> Tax lien</label>
     <label><input type="checkbox" class="ff" value="Lis pendens"> Lis pendens</label>
@@ -825,9 +807,6 @@ fetch('./records.json')
     document.getElementById('loading').style.display='none';
     document.getElementById('lt').style.display='';
     document.getElementById('h-score').classList.add('sd');
-    const cc={{}};
-    R.forEach(r=>{{cc[r.cat_code]=(cc[r.cat_code]||0)+1}});
-    Object.entries(cc).forEach(([k,v])=>{{const e=document.getElementById('c-'+k);if(e)e.textContent=v.toLocaleString()}});
     af();
   }})
   .catch(e=>{{
@@ -839,10 +818,8 @@ function af(){{
   const ms=parseInt(document.getElementById('sr').value)||0;
   const an=parseFloat(document.getElementById('amn').value)||0;
   const ax=parseFloat(document.getElementById('amx').value)||Infinity;
-  const cats=new Set([...document.querySelectorAll('.cf:checked')].map(e=>e.value));
   const flags=[...document.querySelectorAll('.ff:checked')].map(e=>e.value).filter(Boolean);
   fil=R.filter(r=>{{
-    if(!cats.has(r.cat_code))return false;
     if(r.score<ms)return false;
     if((r.amount||0)<an||(r.amount||0)>ax)return false;
     if(flags.length&&!flags.some(f=>(r.flags||[]).includes(f)))return false;
@@ -910,6 +887,7 @@ function us(){{
   document.getElementById('sa').textContent=avg;
   document.getElementById('sd').textContent='$'+debt.toLocaleString('en-US',{{maximumFractionDigits:0}});
 }}
+function phs(msg){{alert(msg+' coming soon');}}
 function sr2(idx){{
   document.querySelectorAll('#tb tr').forEach(t=>t.classList.remove('sel'));
   const tr=document.querySelector('#tb tr[data-i="'+idx+'"]');
@@ -919,14 +897,35 @@ function sr2(idx){{
   const lbl=r.score>=70?'High motivation':r.score>=50?'Medium motivation':'Low motivation';
   const addr=[(r.addr||''),(r.city||''),(r.state||''),(r.zip||'')].filter(Boolean).join(', ')||'&mdash;';
   const amt=(r.amount||0)?'$'+(r.amount).toLocaleString('en-US',{{minimumFractionDigits:2}}):'&mdash;';
-  const fi=(r.flags||[]).map(f=>'<div class="dfi">'+f+'</div>').join('');
-  document.getElementById('db').innerHTML='<div class="dscore"><div><div class="dsn '+sc+'">'+r.score+'</div><div class="dsl">Seller score</div></div><div class="dsr">'+lbl+'<br><span style="color:var(--text3)">'+(r.flags||[]).length+' signal'+((r.flags||[]).length!==1?'s':'')+'</span></div></div><div class="ds"><div class="dst">Property</div><div class="dr"><span class="dk">Address</span><span class="dv">'+addr+'</span></div><div class="dr"><span class="dk">City / Zip</span><span class="dv">'+(r.city||'&mdash;')+' '+(r.zip||'')+'</span></div></div><div class="ds"><div class="dst">Owner</div><div class="dr"><span class="dk">Name</span><span class="dv">'+(r.owner||'&mdash;')+'</span></div><div class="dr"><span class="dk">Phone</span><span class="dv mn">'+(r.phone||'&mdash;')+'</span></div><div class="dr"><span class="dk">Email</span><span class="dv">'+(r.email||'&mdash;')+'</span></div><div class="dr"><span class="dk">Skip Trace</span><span class="dv">'+(r.skiptrace||'Not run')+'</span></div></div><div class="ds"><div class="dst">Filing</div><div class="dr"><span class="dk">Doc #</span><span class="dv mn">'+(r.doc_num||'&mdash;')+'</span></div><div class="dr"><span class="dk">Category</span><span class="dv">'+(r.cat_code||'')+'</span></div><div class="dr"><span class="dk">Filed</span><span class="dv mn">'+(r.filed||'&mdash;')+'</span></div><div class="dr"><span class="dk">Amt Due</span><span class="dv big">'+amt+'</span></div></div>'+(fi?'<div class="dfl"><div class="dst">Motivated Seller Signals</div>'+fi+'</div>':'')+'<div class="dacts">'+(r.url?'<a href="'+r.url+'" target="_blank" style="text-decoration:none"><button class="abt abs">View Public Record &#x2197;</button></a>':'')+'<button class="abt abs" onclick="alert(\'Skip trace coming soon\')">Run Skip Trace</button><button class="abt abs" onclick="alert(\'Deal analyzer coming soon\')">Run Deal Analysis</button><button class="abt abs" onclick="alert(\'Stack coming soon\')">Add to Stack</button></div>';
+  const fi=(r.flags||[]).map(f=>`<div class="dfi">`+f+`</div>`).join('');
+  const sigCount=(r.flags||[]).length;
+  const pubBtn=r.url?`<a href="`+r.url+`" target="_blank" style="text-decoration:none"><button class="abt abp">View Public Record &#x2197;</button></a>`:'';
+  document.getElementById('db').innerHTML=
+    `<div class="dscore"><div><div class="dsn `+sc+`">`+r.score+`</div><div class="dsl">Seller score</div></div>`+
+    `<div class="dsr">`+lbl+`<br><span style="color:var(--text3)">`+sigCount+` signal`+(sigCount!==1?'s':'')+`</span></div></div>`+
+    `<div class="ds"><div class="dst">Property</div>`+
+    `<div class="dr"><span class="dk">Address</span><span class="dv">`+addr+`</span></div>`+
+    `<div class="dr"><span class="dk">City / Zip</span><span class="dv">`+(r.city||'&mdash;')+` `+(r.zip||'')+`</span></div></div>`+
+    `<div class="ds"><div class="dst">Owner</div>`+
+    `<div class="dr"><span class="dk">Name</span><span class="dv">`+(r.owner||'&mdash;')+`</span></div>`+
+    `<div class="dr"><span class="dk">Phone</span><span class="dv mn">`+(r.phone||'&mdash;')+`</span></div>`+
+    `<div class="dr"><span class="dk">Email</span><span class="dv">`+(r.email||'&mdash;')+`</span></div>`+
+    `<div class="dr"><span class="dk">Skip Trace</span><span class="dv">`+(r.skiptrace||'Not run')+`</span></div></div>`+
+    `<div class="ds"><div class="dst">Filing</div>`+
+    `<div class="dr"><span class="dk">Doc #</span><span class="dv mn">`+(r.doc_num||'&mdash;')+`</span></div>`+
+    `<div class="dr"><span class="dk">Category</span><span class="dv">`+(r.cat_code||'')+`</span></div>`+
+    `<div class="dr"><span class="dk">Filed</span><span class="dv mn">`+(r.filed||'&mdash;')+`</span></div>`+
+    `<div class="dr"><span class="dk">Amt Due</span><span class="dv big">`+amt+`</span></div></div>`+
+    (fi?`<div class="dfl"><div class="dst">Motivated Seller Signals</div>`+fi+`</div>`:'')+
+    `<div class="dacts">`+pubBtn+
+    `<button class="abt abs" onclick="phs('Skip trace')">Run Skip Trace</button>`+
+    `<button class="abt abs" onclick="phs('Deal analyzer')">Run Deal Analysis</button>`+
+    `<button class="abt abs" onclick="phs('Stack')">Add to Stack</button></div>`;
   document.getElementById('dp').classList.remove('closed');
 }}
 function cd(){{document.getElementById('dp').classList.add('closed');document.querySelectorAll('#tb tr').forEach(t=>t.classList.remove('sel'));}}
 function st(el,t){{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');tab=t;af();}}
 function rf(){{
-  document.querySelectorAll('.cf').forEach(e=>e.checked=true);
   document.querySelectorAll('.ff').forEach(e=>e.checked=false);
   document.getElementById('sr').value=0;document.getElementById('sv').textContent='0';
   document.getElementById('amn').value='';document.getElementById('amx').value='';
