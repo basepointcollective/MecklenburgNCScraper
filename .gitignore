@@ -1,0 +1,6 @@
+# Claude Code internal files
+.claude/
+
+# Python
+scraper/__pycache__/
+*.py[cod]
