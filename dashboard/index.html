@@ -147,7 +147,7 @@ td.oc{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ove
     <input type="range" id="sr" min="0" max="100" value="0" oninput="document.getElementById('sv').textContent=this.value;af()"></div>
   </div>
   <div class="sb"><div class="sbl">Amount Due</div>
-    <div class="amt-inputs"><input type="number" id="amn" placeholder="Min $" value="2500" oninput="af()"><input type="number" id="amx" placeholder="Max $" oninput="af()"></div>
+    <div class="amt-inputs"><input type="number" id="amn" placeholder="Min $" oninput="af()"><input type="number" id="amx" placeholder="Max $" oninput="af()"></div>
   </div>
   <div class="sb"><div class="sbl">Skip Trace Status</div><div class="filter-group">
     <label><input type="checkbox" class="skf" value="" checked> All</label>
@@ -158,10 +158,6 @@ td.oc{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ove
   <div class="sb-sources">
     <div class="sbl">Data Sources</div>
     <div class="src-item">Tax Delinquent PDF <span class="src-badge bl">LIVE</span></div>
-    <div class="src-item">Public Records <span class="src-badge bs">SOON</span></div>
-    <div class="src-item">Foreclosure Map <span class="src-badge bs">SOON</span></div>
-    <div class="src-item">Tax File <span class="src-badge bu">UPLOAD</span></div>
-    <div class="src-item">Tax Assessor <span class="src-badge bl">LIVE</span></div>
     <button class="reset-btn" onclick="rf()">Reset All Filters</button>
   </div>
 </nav>
@@ -180,13 +176,7 @@ td.oc{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ove
     <button class="exp-btn" onclick="ec()">Export CSV</button>
   </div>
   <div id="tabs">
-    <div class="tab active" onclick="st(this,'all')">Live Feed</div>
-    <div class="tab" onclick="st(this,'foreclosure')">Foreclosures</div>
-    <div class="tab" onclick="st(this,'taxdel')">Tax Delinquent</div>
-    <div class="tab" onclick="st(this,'public')">Public Records</div>
-    <div class="tab" onclick="st(this,'stack')">Stack</div>
-    <div class="tab" onclick="st(this,'deal')">Deal Analyzer</div>
-    <div class="tab" onclick="st(this,'export')">Export + Mail</div>
+    <div class="tab active">Tax Delinquent Leads</div>
   </div>
   <div id="tw">
     <div id="loading">Loading records...</div>
@@ -221,7 +211,7 @@ td.oc{color:var(--text);font-weight:500;max-width:190px;overflow:hidden;text-ove
   <div id="db"></div>
 </div>
 <script>
-let R=[],fil=[],sk='score',sortAsc=false,cp=1,tab='all';
+let R=[],fil=[],sk='score',sortAsc=false,cp=1;
 const FM={'Tax lien':'d0','Lis pendens':'d1','Pre-foreclosure':'d2','Judgment lien':'d3','Mechanic lien':'d4','Probate / estate':'d5','LLC / corp owner':'d6','New this week':'d7'};
 
 fetch('./records.json')
@@ -248,8 +238,6 @@ function af(){
     if((r.amount||0)<an||(r.amount||0)>ax)return false;
     if(flags.length&&!flags.some(f=>(r.flags||[]).includes(f)))return false;
     if(q){const h=((r.addr||'')+' '+(r.city||'')+' '+(r.owner||'')+' '+(r.cat||'')+' '+(r.doc_type||'')).toLowerCase();if(!h.includes(q))return false}
-    if(tab==='foreclosure'&&r.cat_code!=='NOFC')return false;
-    if(tab==='taxdel'&&r.cat_code!=='TAXDEL')return false;
     return true;
   });
   srt();cp=1;rn();us();
@@ -348,7 +336,6 @@ function sr2(idx){
   document.getElementById('dp').classList.remove('closed');
 }
 function cd(){document.getElementById('dp').classList.add('closed');document.querySelectorAll('#tb tr').forEach(t=>t.classList.remove('sel'));}
-function st(el,t){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');tab=t;af();}
 function rf(){
   document.querySelectorAll('.ff').forEach(e=>e.checked=false);
   document.getElementById('sr').value=0;document.getElementById('sv').textContent='0';
@@ -359,8 +346,7 @@ function ec(){
   const h=['Score','Owner','Property Address','City','State','Zip','Amount Due','Category','Doc Type','Filed','Flags','Phone','Email','Skip Trace','Source','URL'];
   const lines=[h.join(',')];
   fil.forEach(r=>lines.push([r.score,'"'+(r.owner||'').replace(/"/g,'""')+'"','"'+(r.addr||'').replace(/"/g,'""')+'"',(r.city||''),(r.state||''),(r.zip||''),(r.amount||0),'"'+(r.cat||'').replace(/"/g,'""')+'"','"'+(r.doc_type||'').replace(/"/g,'""')+'"',(r.filed||''),'"'+((r.flags||[]).join('|'))+'"',(r.phone||''),(r.email||''),(r.skiptrace||''),(r.source||''),(r.url||'')].join(',')));
-  const b=new Blob([lines.join('
-')],{type:'text/csv'});
+  const b=new Blob([lines.join('\n')],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='mecklenburg_leads.csv';a.click();
 }
 </script>
