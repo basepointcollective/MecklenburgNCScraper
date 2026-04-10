@@ -261,7 +261,11 @@ def _clean(s: str | None) -> str:
 def _parse_amount(raw: str) -> float:
     if not raw:
         return 0.0
-    cleaned = re.sub(r"[^\d.]", "", raw)
+    # Strip state code and ZIP that bleed in from PDF column misalignment
+    # e.g. "NC 28269137.97" or "NC 28202 196.21"
+    s = re.sub(r"(?i)\b[A-Z]{2}\b", "", raw).strip()      # remove state code
+    s = re.sub(r"^282\d{2}\s*", "", s).strip()              # remove leading Mecklenburg ZIP (282xx)
+    cleaned = re.sub(r"[^\d.]", "", s)
     try:
         return float(cleaned)
     except ValueError:
@@ -394,6 +398,11 @@ def _parse_page(page, page_num, records, fetched_at):
 
         amount_float = _parse_amount(amount_raw)
         addr = _split_address(situs_raw)
+        # If ZIP is empty, try to extract it from the amount column
+        if not addr["zip"]:
+            zip_match = re.search(r"\b(28\d{3})\b", amount_raw)
+            if zip_match:
+                addr["zip"] = zip_match.group(1)
         flags: list[str] = ["Tax lien"]
         flags += _owner_flags(name_raw)
         today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
