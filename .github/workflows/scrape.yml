@@ -42,7 +42,7 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f dashboard/index.html dashboard/records.json data/records.json data/ghl_export.csv
+          git add -f dashboard/index.html dashboard/records.json data/records.json data/ghl_export.csv data/tax_delinquent.csv
           git diff --cached --quiet || git commit -m "chore: auto-update leads $(date -u +%Y-%m-%d)"
           git push
 

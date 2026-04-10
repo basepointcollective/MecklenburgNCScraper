@@ -439,6 +439,76 @@ def _parse_page(page, page_num, records, fetched_at):
 
 
 # ---------------------------------------------------------------------------
+# CSV parser (county spreadsheet export)
+# ---------------------------------------------------------------------------
+
+def parse_tax_delinquent_csv(csv_path: Path) -> list[dict[str, Any]]:
+    """Parse the county's tax delinquent CSV spreadsheet export."""
+    import csv as _csv
+    records: list[dict[str, Any]] = []
+    fetched_at = datetime.now(timezone.utc).isoformat()
+    today_str  = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    with open(csv_path, newline="", encoding="utf-8-sig") as f:
+        reader = _csv.DictReader(f)
+        for row in reader:
+            # Normalize keys/values (header has a leading space on Amount)
+            row = {k.strip(): v.strip() for k, v in row.items()}
+            name_raw   = row.get("Name", "").strip()
+            addr_raw   = row.get("Address", "").strip()
+            amount_raw = row.get("Amount", "").strip()
+
+            if not name_raw:
+                continue
+
+            # Parse amount: " $ 59,771.36 " → 59771.36
+            amount_float = 0.0
+            try:
+                amount_float = float(re.sub(r"[^\d.]", "", amount_raw))
+            except ValueError:
+                pass
+
+            addr  = _split_address(addr_raw)
+            flags: list[str] = ["Tax lien"]
+            flags += _owner_flags(name_raw)
+
+            record: dict[str, Any] = {
+                "doc_num":          "",
+                "doc_type":         "Tax Delinquent",
+                "filed":            today_str,
+                "cat":              "TAXDEL",
+                "cat_label":        "Tax Delinquent",
+                "owner":            name_raw.title(),
+                "grantee":          "",
+                "amount":           amount_float,
+                "amount_raw":       amount_raw,
+                "legal":            "",
+                "prop_address":     addr["street"],
+                "prop_city":        addr["city"],
+                "prop_state":       addr["state"],
+                "prop_zip":         addr["zip"],
+                "prop_full":        addr["full"],
+                "mail_address":     addr["street"],
+                "mail_city":        addr["city"],
+                "mail_state":       addr["state"],
+                "mail_zip":         addr["zip"],
+                "clerk_url":        TAX_DEL_PDF_URL,
+                "flags":            list(set(flags)),
+                "score":            0,
+                "fetched_at":       fetched_at,
+                "source":           f"{COUNTY} Tax Delinquent CSV",
+                "phone":            "",
+                "email":            "",
+                "skiptrace_status": "",
+            }
+            record["score"] = _score_record(record)
+            records.append(record)
+
+    log.info("CSV parser: %d records from %s", len(records), csv_path.name)
+    return records
+
+
+# ---------------------------------------------------------------------------
 # Build output payload
 # ---------------------------------------------------------------------------
 
@@ -484,9 +554,9 @@ def write_json(payload: dict[str, Any]) -> None:
                    "amount","cat_label","cat","flags","filed","doc_type","doc_num",
                    "mail_address","mail_city","mail_state","mail_zip",
                    "source","clerk_url","phone","email","skiptrace_status"]
-    # Sort by score desc, cap at 5000 for dashboard (keeps file under 1MB)
+    # Sort by score desc — all records included
     top_records = sorted(payload.get("records", []),
-                         key=lambda r: r.get("score", 0), reverse=True)[:5000]
+                         key=lambda r: r.get("score", 0), reverse=True)
     slim_records = []
     for r in top_records:
         slim_records.append({
@@ -946,13 +1016,24 @@ def main() -> None:
 
     all_records: list[dict[str, Any]] = []
 
-    try:
-        pdf_bytes = download_pdf(TAX_DEL_PDF_URL)
-        taxdel    = parse_tax_delinquent_pdf(pdf_bytes)
-        all_records.extend(taxdel)
-        log.info("Tax Delinquent: %d records ingested", len(taxdel))
-    except Exception as exc:
-        log.error("Tax Delinquent PDF failed: %s", exc)
+    # Prefer the CSV spreadsheet export (cleaner data, all records).
+    # Fall back to PDF if the CSV is not present.
+    csv_path = DATA_DIR / "tax_delinquent.csv"
+    if csv_path.exists():
+        try:
+            taxdel = parse_tax_delinquent_csv(csv_path)
+            all_records.extend(taxdel)
+            log.info("Tax Delinquent CSV: %d records ingested", len(taxdel))
+        except Exception as exc:
+            log.error("Tax Delinquent CSV failed: %s", exc)
+    else:
+        try:
+            pdf_bytes = download_pdf(TAX_DEL_PDF_URL)
+            taxdel    = parse_tax_delinquent_pdf(pdf_bytes)
+            all_records.extend(taxdel)
+            log.info("Tax Delinquent PDF: %d records ingested", len(taxdel))
+        except Exception as exc:
+            log.error("Tax Delinquent PDF failed: %s", exc)
 
     seen: set[tuple] = set()
     deduped: list[dict] = []
